@@ -29,7 +29,7 @@ def chat():
     data = {
         "model": "mistralai/mistral-7b-instruct",
         "messages": [
-            {"role": "system", "content": "You are a sassy assistant."},
+            {"role": "system", "content": "You are an angry  assistant. Angry all the time"},
             {"role": "user", "content": user_message}
         ]
     }
