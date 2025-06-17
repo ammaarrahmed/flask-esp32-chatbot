@@ -1,13 +1,14 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # Add this!
+from flask import Flask, request, jsonify, abort
+from flask_cors import CORS
 import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests (Hoppscotch, ESP32)
+CORS(app)
 
-# Replace with your OpenRouter API key (in Render's Env Vars)
+# Load your API keys from environment variables
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+ESP32_SECRET_KEY = os.environ.get("ESP32_SECRET_KEY")  # ✅ Add this in Render
 
 @app.route('/')
 def home():
@@ -15,21 +16,28 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    # 🔐 Require API key
+    client_key = request.headers.get("X-API-KEY")
+    if client_key != ESP32_SECRET_KEY:
+        abort(401, description="Unauthorized: Invalid API Key")
+
+    # 📥 Get user message
     user_message = request.json.get("message", "")
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
+    # 📡 Prepare OpenRouter API call
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "yourdomain.com",  # any string is fine
+        "HTTP-Referer": "yourdomain.com",
         "X-Title": "ESP32 Bot"
     }
 
     data = {
         "model": "mistralai/mistral-7b-instruct",
         "messages": [
-            {"role": "system", "content": "You are an angry  assistant. Angry all the time"},
+            {"role": "system", "content": "You are a sassy assistant."},
             {"role": "user", "content": user_message}
         ]
     }
