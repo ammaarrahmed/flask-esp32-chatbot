@@ -1,10 +1,17 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Add this!
 import requests
 import os
-app = Flask(__name__)
 
-# Replace with your OpenRouter API key
+app = Flask(__name__)
+CORS(app)  # Allow cross-origin requests (Hoppscotch, ESP32)
+
+# Replace with your OpenRouter API key (in Render's Env Vars)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+
+@app.route('/')
+def home():
+    return "ESP32 chatbot is alive!"
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -15,7 +22,7 @@ def chat():
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "yourdomain.com",
+        "HTTP-Referer": "yourdomain.com",  # any string is fine
         "X-Title": "ESP32 Bot"
     }
 
@@ -27,10 +34,16 @@ def chat():
         ]
     }
 
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions",
+                             headers=headers, json=data)
+
     try:
         bot_reply = response.json()['choices'][0]['message']['content']
-    except:
-        return jsonify({"error": "API error", "details": response.text}), 500
+    except Exception as e:
+        return jsonify({
+            "error": "API error",
+            "details": response.text,
+            "exception": str(e)
+        }), 500
 
     return jsonify({"reply": bot_reply})
